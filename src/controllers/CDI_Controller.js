@@ -5,47 +5,49 @@ const keyScore_model = require('../models/keyScore_model')
 
 const add_Cdi_Data = async(req,res) =>{
 
-    try{
-        const {keyInd,ind} = req.body
+    let keyIndicatorScore = null
 
-        try{
-            const data = await cdiModel.findOne({keyInd, ind})
+    const keyScoreCalc = async(keyInd) =>{
+        const allData = await cdiModel.find({keyInd})
+        const comparingData = cdi_dataset.find((data) => data[`keyInd${keyInd}`])  
+            //Calculation
+            if(allData.length == comparingData[`keyInd${keyInd}`].subInd_total){
+                const sortedData = allData.sort((a,b) => Number(a.ind)-Number(b.ind))
+                const ind_Weight = comparingData[`keyInd${keyInd}`].ind_Weight
+                const indScoreXweight = sortedData.map((data) => data.ind_score*ind_Weight/100)
+                keyIndicatorScore = indScoreXweight.reduce((a,b) => {return a+b},0)
 
-            if(data){
-                const updatedData = await cdiModel.findOneAndUpdate({keyInd, ind},req.body,{new:true})
-                
-                let keyIndicatorscore = null
-                // Calculate Key Indicator Weight
-                const allData = await cdiModel.find({keyInd})
-                const comparingData = cdi_dataset.find((data) => data[`keyInd${keyInd}`])
-
-                if(allData.length == comparingData[`keyInd${keyInd}`].subInd_total){
-                    const sortedData = allData.sort((a,b) => Number(a.ind)-Number(b.ind))
-                    const weightedArray = comparingData[`keyInd${keyInd}`].keyInd_weight
-                    const indScoreXweight = sortedData.map((data,index) => data.ind_score*weightedArray[index]/100) 
-                    keyIndicatorscore = indScoreXweight.reduce((a,b) => {return a+b},0)
-
-                    const keyIndData = {
-                        category:"EDI",
-                        keyInd: keyInd,
-                        keyInd_name:comparingData[`keyInd${keyInd}`].name,
-                        keyInd_Score:keyIndicatorscore,
-                    }
-
-                    try{
-                        const findSimilarData = keyScore_model.find({category:"CDI",keyInd})
-                        if(!findSimilarData){ await keyScore_model.create(keyIndData)}
-                    }catch(err){res.status(400).json({msg : err.message})}
+                //Payload
+                const keyIndData = {
+                    category:"CDI",
+                    keyInd: keyInd,
+                    keyInd_name:comparingData[`keyInd${keyInd}`].name,
+                    keyInd_Score:keyIndicatorScore,
                 }
 
-                res.status(201).json({message:"Updated Successfully", data:updatedData,keyScore:keyIndicatorscore})
+                //Update or Create
+                const findSimilarData = await keyScore_model.findOne({category:"CDI", keyInd})
+                if(!findSimilarData){ await keyScore_model.create(keyIndData)}
+                else{ await keyScore_model.findOneAndUpdate({category:"CDI", keyInd},keyIndData,{new:true})}
+            }
+    }
+    
+
+    try{
+        const {keyInd,ind} = req.body
+        const data = await cdiModel.findOne({keyInd, ind})
+        
+            if(data){
+                const updatedData = await cdiModel.findOneAndUpdate({keyInd, ind},req.body,{new:true})
+                await keyScoreCalc(keyInd)
+                console.log(keyIndicatorScore)
+                res.status(201).json({message:"Updated Successfully", data:updatedData,keyScore:keyIndicatorScore})
             }else{
                 const data = await cdiModel.create(req.body)
-                res.status(200).json({message:"Created Successfully",data}) 
+                const {keyInd} = req.body
+                await keyScoreCalc(keyInd)
+                res.status(200).json({message:"Created Successfully",data,keyScore:keyIndicatorScore})
             }
-        }catch(err){
-            res.status(400).json({msg : err.message})
-        }
 
     }catch(error){
         res.status(400).json({msg : error.message})
