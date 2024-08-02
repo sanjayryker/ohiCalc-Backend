@@ -1,11 +1,11 @@
-const mongoose = require('mongoose')
-const ediModel = require('../models/EDI_model')
+// const ediModel = require('../models/EDI_model')
 const edi_dataset = require('../dataset/edi_dataset')
 const keyScore_model = require('../models/keyScore_model')
 
 const add_Edi_Data = async(req,res) =>{
 
     let keyIndicatorScore = null
+    const ediModel = req.dbConnection.model('EDI_value', require('../models/EDI_model').schema);
 
     const keyScoreCalc = async(keyInd) =>{
         const allData = await ediModel.find({keyInd})
@@ -54,7 +54,7 @@ const add_Edi_Data = async(req,res) =>{
 }
 
 const get_Edi_Data = async(req,res) =>{
-
+    const ediModel = req.dbConnection.model('EDI_value', require('../models/EDI_model').schema);
     const {category,key,ind} = req.body
     const keyInd_num = key.slice(-1)
     const ind_num = ind.slice(-1)
