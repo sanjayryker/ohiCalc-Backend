@@ -7,4 +7,4 @@ const keyScore_schema = new mongoose.Schema({
     keyInd_Score:{type:String, required:true}
 },{ timestamps : true})
 
-module.exports = mongoose.model('keyScore',keyScore_schema)
+module.exports = mongoose.model('keyScore' ,keyScore_schema)

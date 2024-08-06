@@ -1,9 +1,9 @@
-const mongoose = require('mongoose')
-const keyScore_model = require('../models/keyScore_model')
+// const mongoose = require('mongoose')
+// const keyScore_model = require('../models/keyScore_model')
 const category_dataset = require('../dataset/category_dataset')
-const catScoreModel = require('../models/catScoreModel')
 
 const get_keyIndScore_EDI = async(req,res) =>{
+    const keyScore_model = req.dbConnection.model('keyScore', require('../models/keyScore_model').schema);
     try {
         const data = await keyScore_model.find({ category: "EDI" });
         res.status(200).json(data);
@@ -13,6 +13,7 @@ const get_keyIndScore_EDI = async(req,res) =>{
 }
 
 const get_keyIndScore_CDI = async(req,res) =>{
+    const keyScore_model = req.dbConnection.model('keyScore', require('../models/keyScore_model').schema);
     try {
         const data = await keyScore_model.find({ category: "CDI" });
         res.status(200).json(data);
@@ -22,6 +23,7 @@ const get_keyIndScore_CDI = async(req,res) =>{
 }
 
 const get_keyIndScore_IDI = async(req,res) =>{
+    const keyScore_model = req.dbConnection.model('keyScore', require('../models/keyScore_model').schema);
     try {
         const data = await keyScore_model.find({ category: "IDI" });
         res.status(200).json(data);
@@ -40,6 +42,8 @@ const calculateCategoryScore = (data, dataset) => {
 };
 
 const get_CategoryScore_All = async(req,res) =>{
+    const keyScore_model = req.dbConnection.model('keyScore', require('../models/keyScore_model').schema)
+    const catScoreModel = req.dbConnection.model('categoryScore', require('../models/catScoreModel').schema)
     try{
         const data =await keyScore_model.find()
 

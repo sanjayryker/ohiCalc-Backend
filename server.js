@@ -20,8 +20,11 @@ app.use(express.urlencoded({extended:false}))
 const db1URI = process.env.MONGODB_URI1;
 const db2URI = process.env.MONGODB_URI2;
 
-const db1Connection = mongoose.createConnection(db1URI);
-const db2Connection = mongoose.createConnection(db2URI);
+const db1Connection = mongoose.createConnection(db1URI,{ useNewUrlParser: true, useUnifiedTopology: true });
+const db2Connection = mongoose.createConnection(db2URI,{ useNewUrlParser: true, useUnifiedTopology: true });
+
+db1Connection.on('error', console.error.bind(console, 'MongoDB connection error for db1:'));
+db2Connection.on('error', console.error.bind(console, 'MongoDB connection error for db2:'));
 
 // Middleware to select the correct database
 const selectDatabase = (req, res, next) => {
@@ -42,7 +45,13 @@ app.use('/IDI',idi_route)
 app.use('/CDI',cdi_route)
 app.use('/api',score_route)
 
-app.get('/',(req,res)=> res.send("Api Working"))
+app.use('/weight/EDI',edi_route)
+app.use('/weight/IDI',idi_route)
+app.use('/weight/CDI',cdi_route)
+app.use('/weight/api',score_route)
+
+
+// app.get('/',(req,res)=> res.send("Api Working"))
 
 // mongoose
 // .connect(process.env.MONGODB_URI2)

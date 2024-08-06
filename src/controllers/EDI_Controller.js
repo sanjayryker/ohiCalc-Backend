@@ -1,21 +1,36 @@
-// const ediModel = require('../models/EDI_model')
 const edi_dataset = require('../dataset/edi_dataset')
-const keyScore_model = require('../models/keyScore_model')
 
 const add_Edi_Data = async(req,res) =>{
 
     let keyIndicatorScore = null
-    const ediModel = req.dbConnection.model('EDI_value', require('../models/EDI_model').schema);
+    const ediModel = req.dbConnection.model('EDI_value', require('../models/EDI_model').schema)
+    const keyScore_model = req.dbConnection.model('keyScore', require('../models/keyScore_model').schema)
+    // console.log(req.dbConnection.name)
 
-    const keyScoreCalc = async(keyInd) =>{
+    const keyScoreCalc = async(keyInd,reqBody) =>{
         const allData = await ediModel.find({keyInd})
-        const comparingData = edi_dataset.find((data) => data[`keyInd${keyInd}`])  
+        const similarData = allData.find((val) => val.ind == reqBody.ind)
+        const indexNum = allData.indexOf(similarData)
+        allData.splice(indexNum,1,reqBody)
+
+        const comparingData = edi_dataset.find((data) => data[`keyInd${keyInd}`]) 
             //Calculation
-            if(allData.length == comparingData[`keyInd${keyInd}`].subInd_total){
+            if(allData.length == comparingData[`keyInd${keyInd}`].Ind_total){
                 const sortedData = allData.sort((a,b) => Number(a.ind)-Number(b.ind))
-                const ind_Weight = comparingData[`keyInd${keyInd}`].ind_Weight
-                const indScoreXweight = sortedData.map((data) => data.ind_score*ind_Weight/100)
-                keyIndicatorScore = indScoreXweight.reduce((a,b) => {return a+b},0)
+                
+                if(req.dbConnection.name === "Ohi-Values"){
+                    const ind_Weight = comparingData[`keyInd${keyInd}`].ind_Weight
+                    const indScoreXweight = sortedData.map((data) => data.ind_score*(ind_Weight)/100)
+                    keyIndicatorScore = indScoreXweight.reduce((a,b) => {return a+b},0)
+                }else if(req.dbConnection.name === "Ohi-Weight-Values"){
+                    const ind_Weight = sortedData.map((data) => data.ind_weight)
+                    const isWeightHundred = ind_Weight.reduce((a,b) => {return Number(a)+Number(b)}, 0)
+                    if (Math.round(isWeightHundred) !== 100) {
+                        throw new Error("Weights must add up to 100.");
+                    }
+                    const indScoreXweight = sortedData.map((data,index) => data.ind_score*ind_Weight[index]/100)
+                    keyIndicatorScore = indScoreXweight.reduce((a,b) => {return a+b},0)
+                }            
 
                 //Payload
                 const keyIndData = {
@@ -32,19 +47,18 @@ const add_Edi_Data = async(req,res) =>{
             }
     }
     
-
     try{
         const {keyInd,ind} = req.body
         const data = await ediModel.findOne({keyInd, ind})
 
             if(data){
+                await keyScoreCalc(keyInd,req.body)
                 const updatedData = await ediModel.findOneAndUpdate({keyInd, ind},req.body,{new:true})
-                await keyScoreCalc(keyInd)
                 res.status(201).json({message:"Updated Successfully", data:updatedData,keyScore:keyIndicatorScore})
             }else{
-                const data = await ediModel.create(req.body)
                 const {keyInd} = req.body
                 await keyScoreCalc(keyInd)
+                const data = await ediModel.create(req.body)
                 res.status(200).json({message:"Created Successfully",data,keyScore:keyIndicatorScore})
             }
 
@@ -55,7 +69,7 @@ const add_Edi_Data = async(req,res) =>{
 
 const get_Edi_Data = async(req,res) =>{
     const ediModel = req.dbConnection.model('EDI_value', require('../models/EDI_model').schema);
-    const {category,key,ind} = req.body
+    const {key,ind} = req.body
     const keyInd_num = key.slice(-1)
     const ind_num = ind.slice(-1)
 

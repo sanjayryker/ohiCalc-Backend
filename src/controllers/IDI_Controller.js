@@ -1,17 +1,17 @@
-const mongoose = require('mongoose')
-const idiModel = require('../models/IDI_model')
 const idi_dataset = require('../dataset/idi_dataset')
-const keyScore_model = require('../models/keyScore_model')
+// const keyScore_model = require('../models/keyScore_model')
 
 const add_Idi_Data = async(req,res) =>{
 
     let keyIndicatorScore = null
+    const idiModel = req.dbConnection.model('IDI_value', require('../models/IDI_model').schema);
+    const keyScore_model = req.dbConnection.model('keyScore', require('../models/keyScore_model').schema)
 
     const keyScoreCalc = async(keyInd) =>{
         const allData = await idiModel.find({keyInd})
         const comparingData = idi_dataset.find((data) => data[`keyInd${keyInd}`])  
             //Calculation
-            if(allData.length == comparingData[`keyInd${keyInd}`].subInd_total){
+            if(allData.length == comparingData[`keyInd${keyInd}`].Ind_total){
                 const sortedData = allData.sort((a,b) => Number(a.ind)-Number(b.ind))
                 const ind_Weight = comparingData[`keyInd${keyInd}`].ind_Weight
                 const indScoreXweight = sortedData.map((data) => data.ind_score*ind_Weight/100)
@@ -56,8 +56,8 @@ const add_Idi_Data = async(req,res) =>{
 
 const get_Idi_Data = async(req,res) =>{
 
-    const {category,key,ind} = req.body
-
+    const {key,ind} = req.body
+    const idiModel = req.dbConnection.model('IDI_value', require('../models/IDI_model').schema);
     const keyInd_num = key.slice(-1)
     const ind_num = ind.slice(-1)
 

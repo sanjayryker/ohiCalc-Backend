@@ -1,17 +1,17 @@
-const mongoose = require('mongoose')
-const cdiModel = require('../models/CDI_model')
 const cdi_dataset = require('../dataset/cdi_dataset')
-const keyScore_model = require('../models/keyScore_model')
+// const keyScore_model = require('../models/keyScore_model')
 
 const add_Cdi_Data = async(req,res) =>{
 
     let keyIndicatorScore = null
+    const cdiModel = req.dbConnection.model('CDI_value', require('../models/CDI_model').schema);
+    const keyScore_model = req.dbConnection.model('keyScore', require('../models/keyScore_model').schema)
 
     const keyScoreCalc = async(keyInd) =>{
         const allData = await cdiModel.find({keyInd})
         const comparingData = cdi_dataset.find((data) => data[`keyInd${keyInd}`])  
             //Calculation
-            if(allData.length == comparingData[`keyInd${keyInd}`].subInd_total){
+            if(allData.length == comparingData[`keyInd${keyInd}`].Ind_total){
                 const sortedData = allData.sort((a,b) => Number(a.ind)-Number(b.ind))
                 const ind_Weight = comparingData[`keyInd${keyInd}`].ind_Weight
                 const indScoreXweight = sortedData.map((data) => data.ind_score*ind_Weight/100)
@@ -57,7 +57,7 @@ const add_Cdi_Data = async(req,res) =>{
 const get_Cdi_Data = async(req,res) =>{
 
     const {category,key,ind} = req.body
-
+    const cdiModel = req.dbConnection.model('CDI_value', require('../models/CDI_model').schema);
     const keyInd_num = key.slice(-1)
     const ind_num = ind.slice(-1)
 
