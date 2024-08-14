@@ -8,10 +8,16 @@ const add_Edi_Data = async(req,res) =>{
     // console.log(req.dbConnection.name)
 
     const keyScoreCalc = async(keyInd,reqBody) =>{
+
         const allData = await ediModel.find({keyInd})
         const similarData = allData.find((val) => val.ind == reqBody.ind)
-        const indexNum = allData.indexOf(similarData)
-        allData.splice(indexNum,1,reqBody)
+
+        if(similarData){
+            const indexNum = allData.indexOf(similarData)
+            allData.splice(indexNum,1,reqBody)
+        }else{
+            allData.push(reqBody)
+        }
 
         const comparingData = edi_dataset.find((data) => data[`keyInd${keyInd}`]) 
             //Calculation
@@ -57,7 +63,7 @@ const add_Edi_Data = async(req,res) =>{
                 res.status(201).json({message:"Updated Successfully", data:updatedData,keyScore:keyIndicatorScore})
             }else{
                 const {keyInd} = req.body
-                await keyScoreCalc(keyInd)
+                await keyScoreCalc(keyInd,req.body)
                 const data = await ediModel.create(req.body)
                 res.status(200).json({message:"Created Successfully",data,keyScore:keyIndicatorScore})
             }
