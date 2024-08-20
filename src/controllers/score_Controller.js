@@ -1,7 +1,7 @@
 // const mongoose = require('mongoose')
 // const keyScore_model = require('../models/keyScore_model')
 const category_dataset = require('../dataset/category_dataset');
-const keyScore_model = require('../models/keyScore_model');
+// const keyScore_model = require('../models/keyScore_model');
 
 const get_keyIndScore_EDI = async(req,res) =>{
     const keyScore_model = req.dbConnection.model('keyScore', require('../models/keyScore_model').schema);
@@ -50,6 +50,7 @@ const calculateCategoryScore = (data, dataset, dbName) => {
 const get_CategoryScore_All = async(req,res) =>{
     const keyScore_model = req.dbConnection.model('keyScore', require('../models/keyScore_model').schema)
     const catScoreModel = req.dbConnection.model('categoryScore', require('../models/catScoreModel').schema)
+    const dbName = req.dbConnection.name
     try{
         const data =await keyScore_model.find()
 
@@ -67,7 +68,6 @@ const get_CategoryScore_All = async(req,res) =>{
         categories.forEach((category) =>{
             const categoryData = data.filter(value => value.category === category);
             const categoryDataset = category_dataset.find(value => value.category === category);
-            const dbName = req.dbConnection.name
             if (category === 'EDI') {
                 payload.ediScore = calculateCategoryScore(categoryData, categoryDataset, dbName);
             } else if (category === 'CDI') {
@@ -78,8 +78,30 @@ const get_CategoryScore_All = async(req,res) =>{
         })
 
         // OHI Score Calculation
-        if(payload.ediScore !== null && payload.idiScore !== null && payload.idiScore !== null){
-            payload.OhiScore = (payload.ediScore + payload.idiScore + payload.cdiScore)*33.33
+        if(payload.ediScore !== null && payload.idiScore !== null && payload.cdiScore !== null){
+            if(dbName === "Ohi-Values"){
+                payload.OhiScore = (payload.ediScore + payload.idiScore + payload.cdiScore)*33.33
+            }else if(dbName === "Ohi-Weight-Values"){
+
+                // const data = await catScoreModel.findOne({id:1})
+                // if(data && data.edi_weight && data.edi_weight && data.edi_weight){
+                //     payload.OhiScore = payload.ediScore*data.edi_weight + payload.idiScore*data.idi_weight + payload.cdiScore*data.cdi_weight 
+                // }else{
+                    // payload.OhiScore = 1
+                // }
+                const data = await catScoreModel.findOne({id:1})
+                if(data){
+                    if( data.edi_weight && data.edi_weight && data.edi_weight){
+                        payload.OhiScore = payload.ediScore*data.edi_weight + payload.idiScore*data.idi_weight + payload.cdiScore*data.cdi_weight 
+                    }else{
+                        payload.OhiScore = 0
+                    }
+                }else{
+                    payload.OhiScore = 0
+                }
+
+
+            }
         }
         
         const catData = await catScoreModel.find({id:1})
@@ -105,17 +127,19 @@ const post_KeyInd_Weight = async(req,res) =>{
     try{
         const datas = await keyScore_model.find({category:path})
         const sortedDatas = datas.sort((a,b) => Number(a.keyInd)-Number(b.keyInd))
+        console.log(sortedDatas)
+
         for(i=0; i< sortedDatas.length; i++){
             const keyInd = sortedDatas[i].keyInd
             const weight = weights[i]
-
+            console.log(path,keyInd,weight)
             await keyScore_model.updateMany(
-                {keyInd : keyInd},
+                {category: path ,keyInd : keyInd},
                 {$set:{keyInd_weight: weight}}
                 )
         }
         const updatedDatas = await keyScore_model.find({ category: path }).sort({ keyInd: 1 });
-        res.status(201).json(updatedDatas)
+        res.status(201).json(updatedDatas)  
     }catch(err){
         res.status(500).json({err:err.message})
     }
@@ -123,11 +147,37 @@ const post_KeyInd_Weight = async(req,res) =>{
 
 const get_KeyInd_Weight = async(req,res) =>{
 
-    const keyScore_model = req.dbConnection.model('keyScore', require('../models/keyScore_model').schema)
-    const path = req.body.path
-    const data = await keyScore_model.find({category:path}).sort({keyInd:1});
-    res.status(200).json(data)
+    try{
+        const keyScore_model = req.dbConnection.model('keyScore', require('../models/keyScore_model').schema)
+        const path = req.body.path
+        const data = await keyScore_model.find({category:path}).sort({keyInd:1});
+        res.status(200).json(data)
+    }catch(err){
+        res.status(500).json({err:err.message})
+    }
+    
 }
 
+const post_Category_Weight = async (req,res) =>{
+    try{
+        const catScoreModel = req.dbConnection.model('categoryScore', require('../models/catScoreModel').schema)
+        const data = await catScoreModel.findOneAndUpdate({id:1},req.body,{new:true})
+        console.log(data)
+        res.status(200).json({msg:'Successfully Updated', data})
+    }catch(err){
+        res.status(500).json({err:err.message})
+    }
+}
 
-module.exports = {get_keyIndScore_EDI,get_keyIndScore_IDI,get_keyIndScore_CDI,get_CategoryScore_All, post_KeyInd_Weight,get_KeyInd_Weight}
+const get_Category_Weight = async (req,res) =>{
+    try{
+        const catScoreModel = req.dbConnection.model('categoryScore', require('../models/catScoreModel').schema)
+        const data = await catScoreModel.findOne({id:1})
+        res.status(200).json(data)
+    }catch{
+        res.status(500).json({err:err.message})
+    }
+}  
+
+
+module.exports = {get_keyIndScore_EDI,get_keyIndScore_IDI,get_keyIndScore_CDI,get_CategoryScore_All, post_KeyInd_Weight,get_KeyInd_Weight,post_Category_Weight,get_Category_Weight}

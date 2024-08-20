@@ -3,6 +3,8 @@ const edi_dataset = require('../dataset/edi_dataset')
 const add_Edi_Data = async(req,res) =>{
 
     let keyIndicatorScore = null
+    let keyIndicatorLength = false
+
     const ediModel = req.dbConnection.model('EDI_value', require('../models/EDI_model').schema)
     const keyScore_model = req.dbConnection.model('keyScore', require('../models/keyScore_model').schema)
     // console.log(req.dbConnection.name)
@@ -23,7 +25,7 @@ const add_Edi_Data = async(req,res) =>{
             //Calculation
             if(allData.length == comparingData[`keyInd${keyInd}`].Ind_total){
                 const sortedData = allData.sort((a,b) => Number(a.ind)-Number(b.ind))
-                
+                keyIndicatorLength = true
                 if(req.dbConnection.name === "Ohi-Values"){
                     const ind_Weight = comparingData[`keyInd${keyInd}`].ind_Weight
                     const indScoreXweight = sortedData.map((data) => data.ind_score*(ind_Weight)/100)
@@ -60,12 +62,12 @@ const add_Edi_Data = async(req,res) =>{
             if(data){
                 await keyScoreCalc(keyInd,req.body)
                 const updatedData = await ediModel.findOneAndUpdate({keyInd, ind},req.body,{new:true})
-                res.status(201).json({message:"Updated Successfully", data:updatedData,keyScore:keyIndicatorScore})
+                res.status(201).json({message:"Updated Successfully", data:updatedData,keyScore:keyIndicatorScore,keyLength :keyIndicatorLength})
             }else{
                 const {keyInd} = req.body
                 await keyScoreCalc(keyInd,req.body)
                 const data = await ediModel.create(req.body)
-                res.status(200).json({message:"Created Successfully",data,keyScore:keyIndicatorScore})
+                res.status(200).json({message:"Created Successfully",data,keyScore:keyIndicatorScore,keyLength :keyIndicatorLength})
             }
 
     }catch(error){
