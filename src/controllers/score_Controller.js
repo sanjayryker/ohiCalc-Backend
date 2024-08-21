@@ -163,7 +163,9 @@ const post_Category_Weight = async (req,res) =>{
         const catScoreModel = req.dbConnection.model('categoryScore', require('../models/catScoreModel').schema)
         const data = await catScoreModel.findOneAndUpdate({id:1},req.body,{new:true})
         console.log(data)
-        res.status(200).json({msg:'Successfully Updated', data})
+        const ohiScore = data.edi_weight*data.ediScore + data.cdi_weight*data.cdiScore + data.idi_weight*data.idiScore
+        console.log(ohiScore)
+        res.status(200).json({msg:'Successfully Updated', data, ohiScore})
     }catch(err){
         res.status(500).json({err:err.message})
     }
