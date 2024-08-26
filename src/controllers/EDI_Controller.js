@@ -52,6 +52,11 @@ const add_Edi_Data = async(req,res) =>{
                 const findSimilarData = await keyScore_model.findOne({category:"EDI", keyInd})
                 if(!findSimilarData){ await keyScore_model.create(keyIndData)}
                 else{ await keyScore_model.findOneAndUpdate({category:"EDI", keyInd},keyIndData,{new:true})}
+
+                await ediModel.updateMany(
+                    {category:"EDI", keyInd : keyInd},
+                    { $set: {keyInd_score: keyIndicatorScore }}
+                    )
             }
     }
     

@@ -7,7 +7,7 @@ const valueSchema = new mongoose.Schema({
     worst: { type: Number },
     current: { type: Number},
     normalized_value: { type: Number },
-    weight: { type: Number },
+    weight: { type: String },
 },{_id:false})
 
 const edi_Schema = new mongoose.Schema({
@@ -21,6 +21,8 @@ const edi_Schema = new mongoose.Schema({
     ind: { type: String, required: true },
     ind_weight:{type : String},
     ind_score: { type: Number, required: true },
+    category_score:{ type: Number},
+    category_weight:{ type: Number},
     status: { type: Boolean, required: true},
     values: [valueSchema]
 } , { timestamps : true})

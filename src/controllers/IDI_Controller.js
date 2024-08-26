@@ -13,7 +13,6 @@ const add_Idi_Data = async(req,res) =>{
 
         const allData = await idiModel.find({keyInd})
         const similarData = allData.find((val) => val.ind == reqBody.ind)
-        let keyIndicatorLength = true
         if(similarData){
             const indexNum = allData.indexOf(similarData)
             allData.splice(indexNum,1,reqBody)
@@ -25,6 +24,7 @@ const add_Idi_Data = async(req,res) =>{
             //Calculation
             if(allData.length == comparingData[`keyInd${keyInd}`].Ind_total){
                 const sortedData = allData.sort((a,b) => Number(a.ind)-Number(b.ind))
+                keyIndicatorLength = true
                 
                 if(req.dbConnection.name === "Ohi-Values"){
                     const ind_Weight = comparingData[`keyInd${keyInd}`].ind_Weight
@@ -52,6 +52,11 @@ const add_Idi_Data = async(req,res) =>{
                 const findSimilarData = await keyScore_model.findOne({category:"IDI", keyInd})
                 if(!findSimilarData){ await keyScore_model.create(keyIndData)}
                 else{ await keyScore_model.findOneAndUpdate({category:"IDI", keyInd},keyIndData,{new:true})}
+
+                await idiModel.updateMany(
+                    {category:"IDI", keyInd : keyInd},
+                    { $set: {keyInd_score: keyIndicatorScore }}
+                    )
             }
     }
     

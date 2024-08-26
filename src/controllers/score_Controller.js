@@ -99,8 +99,6 @@ const get_CategoryScore_All = async(req,res) =>{
                 }else{
                     payload.OhiScore = 0
                 }
-
-
             }
         }
         
@@ -120,25 +118,37 @@ const get_CategoryScore_All = async(req,res) =>{
 }
 
 const post_KeyInd_Weight = async(req,res) =>{
-
-    const keyScore_model = req.dbConnection.model('keyScore', require('../models/keyScore_model').schema)
     const path = req.body.path
     const weights = req.body.weights
-    try{
-        const datas = await keyScore_model.find({category:path})
-        const sortedDatas = datas.sort((a,b) => Number(a.keyInd)-Number(b.keyInd))
-        console.log(sortedDatas)
 
-        for(i=0; i< sortedDatas.length; i++){
-            const keyInd = sortedDatas[i].keyInd
+    const keyScore_model = req.dbConnection.model('keyScore', require('../models/keyScore_model').schema)
+    const ECI_model = req.dbConnection.model(`${path}_value`, require(`../models/${path}_model`).schema)  // TO choose which model(edi,cdi,idi) to update
+    
+    try{
+        const datas = await keyScore_model.find({category:path}).sort({keyInd : 1})
+        
+        const modelData = await ECI_model.find({category:path}).sort({keyInd : 1})
+        
+        // const modelData = await 
+        for(i=0; i< datas.length; i++){
+            const keyInd = datas[i].keyInd
             const weight = weights[i]
             console.log(path,keyInd,weight)
-            await keyScore_model.updateMany(
-                {category: path ,keyInd : keyInd},
-                {$set:{keyInd_weight: weight}}
+
+            await Promise.all([
+                keyScore_model.updateMany(
+                    { category: path, keyInd: keyInd },
+                    { $set: { keyInd_weight: weight } }
+                ),
+                ECI_model.updateMany(
+                    { category: path, keyInd: keyInd },
+                    { $set: { keyInd_weight: weight } }
                 )
+            ])
+
         }
-        const updatedDatas = await keyScore_model.find({ category: path }).sort({ keyInd: 1 });
+        const updatedDatas = await keyScore_model.find({ category: path }).sort({ keyInd: 1 })
+
         res.status(201).json(updatedDatas)  
     }catch(err){
         res.status(500).json({err:err.message})
@@ -161,10 +171,20 @@ const get_KeyInd_Weight = async(req,res) =>{
 const post_Category_Weight = async (req,res) =>{
     try{
         const catScoreModel = req.dbConnection.model('categoryScore', require('../models/catScoreModel').schema)
+
         const data = await catScoreModel.findOneAndUpdate({id:1},req.body,{new:true})
-        console.log(data)
+
+        const dataset = ["EDI","IDI","CDI"]
+        const dataArray =[req.body.edi_weight,req.body.idi_weight,req.body.cdi_weight]
+
+        for(let i=0;i<dataset.length;i++){
+            const ECI_model = req.dbConnection.model(`${dataset[i]}_value`, require(`../models/${dataset[i]}_model`).schema)  // TO choose which model(edi,cdi,idi) to update
+            await ECI_model.updateMany(
+                {category:dataset[i]},
+                {$set:{category_weight: dataArray[i]}}
+            )
+        }
         const ohiScore = data.edi_weight*data.ediScore + data.cdi_weight*data.cdiScore + data.idi_weight*data.idiScore
-        console.log(ohiScore)
         res.status(200).json({msg:'Successfully Updated', data, ohiScore})
     }catch(err){
         res.status(500).json({err:err.message})
