@@ -50,6 +50,7 @@ const add_Cdi_Data = async(req,res) =>{
                     keyInd: keyInd,
                     keyInd_name:comparingData[`keyInd${keyInd}`].name,
                     keyInd_Score:keyIndicatorScore,
+                    id:1
                 }
 
                 //Update or Create

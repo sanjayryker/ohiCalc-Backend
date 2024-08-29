@@ -50,11 +50,13 @@ const calculateCategoryScore = (data, dataset, dbName) => {
 const get_CategoryScore_All = async(req,res) =>{
     const keyScore_model = req.dbConnection.model('keyScore', require('../models/keyScore_model').schema)
     const catScoreModel = req.dbConnection.model('categoryScore', require('../models/catScoreModel').schema)
+    
     const dbName = req.dbConnection.name
     try{
         const data =await keyScore_model.find()
 
         const categories = ["EDI","IDI","CDI"]
+        const scores =["ediScore","idiScore","cdiScore"]
 
         const payload = {
             id:1,
@@ -63,7 +65,6 @@ const get_CategoryScore_All = async(req,res) =>{
             cdiScore : '',
             OhiScore : ''
         }
-
 
         categories.forEach((category) =>{
             const categoryData = data.filter(value => value.category === category);
@@ -103,14 +104,21 @@ const get_CategoryScore_All = async(req,res) =>{
         }
         
         const catData = await catScoreModel.find({id:1})
-
         if(catData.length > 0){
            await catScoreModel.findOneAndUpdate({id:1},payload,{new:true})
            res.status(200).json(payload)
         }else{
             await catScoreModel.create(payload)
             res.status(200).json(payload)
-        }       
+        }
+
+        for(let i=0;i<categories.length;i++){
+            const ECI_model = req.dbConnection.model(`${categories[i]}_value`, require(`../models/${categories[i]}_model`).schema)  // TO choose which model(edi,cdi,idi) to update
+            await ECI_model.updateMany(
+                {category:categories[i]},
+                {$set:{category_score: payload[scores[i]]}}
+            )
+        }
 
     }catch(error){
         res.status(500).json({error:error.message})
@@ -175,10 +183,11 @@ const post_Category_Weight = async (req,res) =>{
         const data = await catScoreModel.findOneAndUpdate({id:1},req.body,{new:true})
 
         const dataset = ["EDI","IDI","CDI"]
-        const dataArray =[req.body.edi_weight,req.body.idi_weight,req.body.cdi_weight]
-
+        const dataArray =[req.body.edi_weight, req.body.idi_weight, req.body.cdi_weight]
+       
         for(let i=0;i<dataset.length;i++){
             const ECI_model = req.dbConnection.model(`${dataset[i]}_value`, require(`../models/${dataset[i]}_model`).schema)  // TO choose which model(edi,cdi,idi) to update
+            console.log(dataArray[i])
             await ECI_model.updateMany(
                 {category:dataset[i]},
                 {$set:{category_weight: dataArray[i]}}

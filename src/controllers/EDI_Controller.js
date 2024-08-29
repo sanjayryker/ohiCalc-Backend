@@ -46,6 +46,7 @@ const add_Edi_Data = async(req,res) =>{
                     keyInd: keyInd,
                     keyInd_name:comparingData[`keyInd${keyInd}`].name,
                     keyInd_Score:keyIndicatorScore,
+                    id:1
                 }
 
                 //Update or Create
@@ -62,6 +63,8 @@ const add_Edi_Data = async(req,res) =>{
     
     try{
         const {keyInd,ind} = req.body
+        const id = req.user._id 
+
         const data = await ediModel.findOne({keyInd, ind})
 
             if(data){
@@ -81,7 +84,7 @@ const add_Edi_Data = async(req,res) =>{
 }
 
 const get_Edi_Data = async(req,res) =>{
-    const ediModel = req.dbConnection.model('EDI_value', require('../models/EDI_model').schema);
+    const ediModel = req.dbConnection.model('EDI_value', require('../models/EDI_model').schema)
     const {key,ind} = req.body
     const keyInd_num = key.slice(-1)
     const ind_num = ind.slice(-1)
@@ -94,4 +97,4 @@ const get_Edi_Data = async(req,res) =>{
     }  
 }
 
-module.exports = {get_Edi_Data,add_Edi_Data}
+module.exports = {get_Edi_Data,add_Edi_Data}    

@@ -46,6 +46,7 @@ const add_Idi_Data = async(req,res) =>{
                     keyInd: keyInd,
                     keyInd_name:comparingData[`keyInd${keyInd}`].name,
                     keyInd_Score:keyIndicatorScore,
+                    id:1
                 }
 
                 //Update or Create
@@ -55,7 +56,7 @@ const add_Idi_Data = async(req,res) =>{
 
                 await idiModel.updateMany(
                     {category:"IDI", keyInd : keyInd},
-                    { $set: {keyInd_score: keyIndicatorScore }}
+                    { $set: {keyInd_score: keyIndicatorScore}}
                     )
             }
     }
