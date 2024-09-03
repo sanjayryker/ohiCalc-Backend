@@ -24,7 +24,7 @@ const cdi_Schema = new mongoose.Schema({
     category_score:{ type: Number},
     category_weight:{ type: Number},
     status: { type: Boolean, required: true},
-    id:{type:Number, required:true},
+    user_id:{type:mongoose.Schema.Types.ObjectId, required:true},
     values: [valueSchema]
 } , { timestamps : true})
 

@@ -1,15 +1,14 @@
 const mongoose = require('mongoose')
 
 const catScoreSchema = new mongoose.Schema({
-    id: {type:Number || String, required:true},
-    ediScore: {type:String , required:true},
-    idiScore :{type:String , required:true},
-    cdiScore :{type:String , required:true},
-    OhiScore :{type:String , required:true},
+    ediScore: {type:String},
+    idiScore :{type:String},
+    cdiScore :{type:String},
+    OhiScore :{type:String},
     edi_weight:{type:String},
     idi_weight:{type:String},
     cdi_weight:{type:String},
-    id:{type:Number, required:true},
+    user_id:{type:mongoose.Schema.Types.ObjectId, required:true},
 },{ timestamps : true})
 
 module.exports = mongoose.model('categoryScore',catScoreSchema)

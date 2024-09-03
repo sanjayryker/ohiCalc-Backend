@@ -9,9 +9,9 @@ const add_Idi_Data = async(req,res) =>{
     const keyScore_model = req.dbConnection.model('keyScore', require('../models/keyScore_model').schema)
     // console.log(req.dbConnection.name)
 
-    const keyScoreCalc = async(keyInd,reqBody) =>{
+    const keyScoreCalc = async(keyInd,reqBody, id) =>{
 
-        const allData = await idiModel.find({keyInd})
+        const allData = await idiModel.find({keyInd, user_id:id})
         const similarData = allData.find((val) => val.ind == reqBody.ind)
         if(similarData){
             const indexNum = allData.indexOf(similarData)
@@ -46,16 +46,16 @@ const add_Idi_Data = async(req,res) =>{
                     keyInd: keyInd,
                     keyInd_name:comparingData[`keyInd${keyInd}`].name,
                     keyInd_Score:keyIndicatorScore,
-                    id:1
+                    user_id:id
                 }
 
                 //Update or Create
-                const findSimilarData = await keyScore_model.findOne({category:"IDI", keyInd})
+                const findSimilarData = await keyScore_model.findOne({category:"IDI", keyInd,user_id:id})
                 if(!findSimilarData){ await keyScore_model.create(keyIndData)}
-                else{ await keyScore_model.findOneAndUpdate({category:"IDI", keyInd},keyIndData,{new:true})}
+                else{ await keyScore_model.findOneAndUpdate({category:"IDI", keyInd, user_id:id},keyIndData,{new:true})}
 
                 await idiModel.updateMany(
-                    {category:"IDI", keyInd : keyInd},
+                    {category:"IDI", keyInd : keyInd, user_id:id},
                     { $set: {keyInd_score: keyIndicatorScore}}
                     )
             }
@@ -63,15 +63,16 @@ const add_Idi_Data = async(req,res) =>{
     
     try{
         const {keyInd,ind} = req.body
-        const data = await idiModel.findOne({keyInd, ind})
+        const id = req.user._id
+        const data = await idiModel.findOne({keyInd, ind, user_id:id})
 
             if(data){
-                await keyScoreCalc(keyInd,req.body)
-                const updatedData = await idiModel.findOneAndUpdate({keyInd, ind},req.body,{new:true})
+                await keyScoreCalc(keyInd,req.body, id)
+                const updatedData = await idiModel.findOneAndUpdate({keyInd, ind, user_id:id},req.body,{new:true})
                 res.status(201).json({message:"Updated Successfully", data:updatedData,keyScore:keyIndicatorScore, keyLength :keyIndicatorLength})
             }else{
                 const {keyInd} = req.body
-                await keyScoreCalc(keyInd,req.body)
+                await keyScoreCalc(keyInd,req.body, id)
                 const data = await idiModel.create(req.body)
                 res.status(200).json({message:"Created Successfully",data,keyScore:keyIndicatorScore, keyLength :keyIndicatorLength})
             }
@@ -84,11 +85,12 @@ const add_Idi_Data = async(req,res) =>{
 const get_Idi_Data = async(req,res) =>{
     const idiModel = req.dbConnection.model('IDI_value', require('../models/IDI_model').schema);
     const {key,ind} = req.body
+    const id = req.user._id
     const keyInd_num = key.slice(-1)
     const ind_num = ind.slice(-1)
 
     try{
-        const data = await idiModel.findOne({keyInd:keyInd_num,ind:ind_num}) 
+        const data = await idiModel.findOne({keyInd:keyInd_num,ind:ind_num, user_id:id}) 
         res.status(200).json(data)
     }catch(err){
         res.status(400).json({msg : err.message})

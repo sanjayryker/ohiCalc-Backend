@@ -9,9 +9,9 @@ const add_Edi_Data = async(req,res) =>{
     const keyScore_model = req.dbConnection.model('keyScore', require('../models/keyScore_model').schema)
     // console.log(req.dbConnection.name)
 
-    const keyScoreCalc = async(keyInd,reqBody) =>{
+    const keyScoreCalc = async(keyInd,reqBody, id) =>{
 
-        const allData = await ediModel.find({keyInd})
+        const allData = await ediModel.find({keyInd,user_id:id})
         const similarData = allData.find((val) => val.ind == reqBody.ind)
 
         if(similarData){
@@ -46,17 +46,17 @@ const add_Edi_Data = async(req,res) =>{
                     keyInd: keyInd,
                     keyInd_name:comparingData[`keyInd${keyInd}`].name,
                     keyInd_Score:keyIndicatorScore,
-                    id:1
+                    user_id : id
                 }
 
                 //Update or Create
-                const findSimilarData = await keyScore_model.findOne({category:"EDI", keyInd})
+                const findSimilarData = await keyScore_model.findOne({category:"EDI", keyInd, user_id : id})
                 if(!findSimilarData){ await keyScore_model.create(keyIndData)}
-                else{ await keyScore_model.findOneAndUpdate({category:"EDI", keyInd},keyIndData,{new:true})}
+                else{ await keyScore_model.findOneAndUpdate({category:"EDI", keyInd, user_id:id},keyIndData,{new:true})}
 
                 await ediModel.updateMany(
-                    {category:"EDI", keyInd : keyInd},
-                    { $set: {keyInd_score: keyIndicatorScore }}
+                    {category:"EDI", keyInd : keyInd, user_id:id},
+                    { $set: {keyInd_score: keyIndicatorScore}}
                     )
             }
     }
@@ -64,16 +64,16 @@ const add_Edi_Data = async(req,res) =>{
     try{
         const {keyInd,ind} = req.body
         const id = req.user._id 
-
-        const data = await ediModel.findOne({keyInd, ind})
+        console.log(id)
+        const data = await ediModel.findOne({keyInd, ind, user_id:id})
 
             if(data){
-                await keyScoreCalc(keyInd,req.body)
-                const updatedData = await ediModel.findOneAndUpdate({keyInd, ind},req.body,{new:true})
+                await keyScoreCalc(keyInd,req.body, id)
+                const updatedData = await ediModel.findOneAndUpdate({keyInd, ind, user_id:id},req.body,{new:true})
                 res.status(201).json({message:"Updated Successfully", data:updatedData,keyScore:keyIndicatorScore,keyLength :keyIndicatorLength})
             }else{
                 const {keyInd} = req.body
-                await keyScoreCalc(keyInd,req.body)
+                await keyScoreCalc(keyInd,req.body, id)
                 const data = await ediModel.create(req.body)
                 res.status(200).json({message:"Created Successfully",data,keyScore:keyIndicatorScore,keyLength :keyIndicatorLength})
             }
@@ -85,12 +85,13 @@ const add_Edi_Data = async(req,res) =>{
 
 const get_Edi_Data = async(req,res) =>{
     const ediModel = req.dbConnection.model('EDI_value', require('../models/EDI_model').schema)
+    const id = req.user._id
     const {key,ind} = req.body
     const keyInd_num = key.slice(-1)
     const ind_num = ind.slice(-1)
 
     try{
-        const data = await ediModel.findOne({keyInd:keyInd_num,ind:ind_num}) 
+        const data = await ediModel.findOne({keyInd:keyInd_num,ind:ind_num, user_id:id}) 
         res.status(200).json(data)
     }catch(err){
         res.status(400).json({msg : err.message})
