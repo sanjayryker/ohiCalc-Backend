@@ -53,6 +53,8 @@ user_schema.statics.login = async function(email,password){
     }
 
     const match = await bcrypt.compare(password, user.password)
+    
+    console.log(password, user.password)
 
     if(!match){
         throw Error("Incorrect password")
@@ -73,7 +75,7 @@ user_schema.statics.forgotPassword = async function(email){
         throw Error ('User does not exist')
     }
     
-    const token = jwt.sign({_id:user._id},process.env.SECRET,{expiresIn:'3d'})
+    const token = jwt.sign({_id:user._id},process.env.SECRET,{expiresIn:'5m'})
 
     var transporter = nodemailer.createTransport({
         service: 'gmail',
@@ -129,5 +131,31 @@ user_schema.statics.forgotPassword = async function(email){
 
 
 } 
+
+//Static resetPass method
+user_schema.statics.resetPassword = async function(id,token,password){
+
+    if(!validator.isStrongPassword(password)){
+        throw Error("Password is not strong enough")
+    }
+
+    return new Promise((resolve, reject) => {
+        jwt.verify(token, process.env.SECRET, async (err) => {
+            if (err) {
+                return reject(new Error("Token is invalid or has expired"));
+            } else {
+                try {
+                    const salt = await bcrypt.genSalt(10);
+                    const hash = await bcrypt.hash(password, salt);
+                    const user = await this.findByIdAndUpdate(id, { password: hash, name : password });
+                    resolve({ status: "success", message: "Password has been successfully reset" })
+                } catch (error) {
+                    reject(new Error("Failed to reset password. Please try again."))
+                }
+            }
+        })
+    })
+
+}
 
 module.exports = mongoose.model('User',user_schema)
