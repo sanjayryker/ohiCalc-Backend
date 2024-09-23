@@ -131,7 +131,7 @@ user_schema.statics.forgotPassword = async function(email){
             <p style="font-size: 1.1em">Hi ${user.user},</p>
             <p>Use the following link to complete your Password Recovery Procedure. The link is valid for 5 minutes</p>
             <h2 style="background: #00466a; margin: 0 auto; width: max-content; padding: 0 10px; color: #fff; border-radius: 4px;">
-              <a href="http://localhost:5173/reset_password/${user._id}/${token}" style="color: #fff; text-decoration: none;">Reset Password</a>
+              <a href="https://ohicalc-frontend.onrender.com/reset_password/${user._id}/${token}" style="color: #fff; text-decoration: none;">Reset Password</a>
             </h2>
             <p style="font-size: 0.9em;">Regards,<br />Community Engagement @TIGS</p>
             <hr style="border: none; border-top: 1px solid #eee" />
@@ -223,7 +223,7 @@ user_schema.statics.verifyEmail = async function(verifyToken, email, userName, u
             <p style="font-size: 1.1em">Hi ${userName},</p>
             <p>Use the following link to complete your Email Verification. The link is valid for 20 minutes</p>
             <h2 style="background: #00466a; margin: 0 auto; width: max-content; padding: 0 10px; color: #fff; border-radius: 4px;">
-              <a href="http://localhost:5173/signinVerification/${verifyToken}" style="color: #fff; text-decoration: none;">Verify Email</a>
+              <a href="https://ohicalc-frontend.onrender.com/signinVerification/${verifyToken}" style="color: #fff; text-decoration: none;">Verify Email</a>
             </h2>
             <p style="font-size: 0.9em;">Regards,<br />Community Engagement @TIGS</p>
             <hr style="border: none; border-top: 1px solid #eee" />
